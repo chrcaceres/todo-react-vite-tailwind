@@ -1,3 +1,4 @@
+import { DragDropContext } from "@hello-pangea/dnd";
 import { useEffect, useState } from "react";
 import Header from "./components/Header";
 import TodoComputed from "./components/TodoComputed";
@@ -5,35 +6,14 @@ import TodoCreate from "./components/TodoCreate";
 import TodoFilter from "./components/TodoFilter";
 import TodoList from "./components/TodoList";
 
-/* const initialStateTodos = [
-    {
-        id: 1,
-        title: "Go to the gym",
-        completed: false,
-    },
-    {
-        id: 2,
-        title: "Complete bluuweb course",
-        completed: true,
-    },
-    {
-        id: 3,
-        title: "Take a shower",
-        completed: false,
-    },
-    {
-        id: 4,
-        title: "Eat protein",
-        completed: false,
-    },
-    {
-        id: 5,
-        title: "Study English",
-        completed: false,
-    },
-]; */
-
 const initialStateTodos = JSON.parse(localStorage.getItem("todos")) || [];
+
+const reorder = (list, startIndex, endIndex) => {
+    const result = [...list];
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
+    return result;
+};
 
 function App() {
     const [todos, setTodos] = useState(initialStateTodos);
@@ -90,6 +70,20 @@ function App() {
         setFilter(filter);
     };
 
+    const handleDragEnd = (result) => {
+        const { destination, source } = result;
+        if (!destination) return;
+        if (
+            source.index === destination.index &&
+            source.droppableId === destination.droppableId
+        )
+            return;
+
+        setTodos((prevTasks) =>
+            reorder(prevTasks, source.index, destination.index)
+        );
+    };
+
     return (
         <div className="min-h-screen bg-gray-200 bg-[url('./assets/images/bg-mobile-light.jpg')] bg-contain bg-no-repeat dark:bg-gray-900 dark:bg-[url('./assets/images/bg-mobile-dark.jpg')] md:bg-[url('./assets/images/bg-desktop-light.jpg')] md:dark:bg-[url('./assets/images/bg-desktop-dark.jpg')] ">
             <Header></Header>
@@ -98,11 +92,13 @@ function App() {
                 <TodoCreate createTodo={createTodo}></TodoCreate>
 
                 {/* TodoList (TodoItem) TodoUpdate y TodoDelete */}
-                <TodoList
-                    todos={filteredTodos()}
-                    removeTodo={removeTodo}
-                    updateTodo={updateTodo}
-                ></TodoList>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    <TodoList
+                        todos={filteredTodos()}
+                        removeTodo={removeTodo}
+                        updateTodo={updateTodo}
+                    ></TodoList>
+                </DragDropContext>
 
                 {/* TodoComputed (o calculadas) */}
                 <TodoComputed
